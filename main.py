@@ -41,10 +41,12 @@ class ModifiedProportional(Election):
         for index, m in enumerate(mandates):
             total = m - self.presidium[index] - self.board[index] - self.board_sup[index]
             self.remaining[index] = total // UTSKOTT + (1 if extra_allocation[index] and total % UTSKOTT > 0 else 0)
+        print("Indata för", committee_name)
         for index, e in enumerate(self.elected):
-            print(f"In: '{self.group[index]}' {self.remaining[index]}")
+            print(f"  '{self.group[index]}' {self.remaining[index]}")
 
     def process(self):
+        print("Undelning utskott", self.committee_name)
         turn = 0
         done = False
         while not done:
@@ -55,7 +57,8 @@ class ModifiedProportional(Election):
             if not done:
                 self.place_best(best_index, turn)
 
-        print("Utskott", self.committee_name)
+        print()
+        print("Resultat Utskott", self.committee_name)
         people_total_min = 0
         people_total_max = 0
         for g, s, e, r in zip(self.group, self.board_sup, self.elected, self.remaining):
@@ -86,22 +89,25 @@ class ModifiedProportional(Election):
         for index in best_index:
             if self.remaining[index] == 0:
                 print(
-                    f"#{turn} '{self.group[index]}' saknar i utskott placeringsbara ledamöter, har {self.board_sup[index]} fria ersättare")
+                    f"  #{turn} '{self.group[index]}' saknar i utskott placeringsbara ledamöter, har {self.board_sup[index]} fria ersättare")
                 done = True
         return done
 
     def place_best(self, best_index: list[int], turn: int):
+        prev_elected = sum(self.elected)
+        if len(best_index) > 1 and (prev_elected < 15 <= prev_elected + len(best_index)):
+            print("  Med 15 fasta ordinarie sker lottning mellan följande")
         for index in best_index:
             number = 1  # placera en åt gången
             if number > self.remaining[index]:
                 print(
-                    f"#{turn}: '{self.group[index]}' saknar ledamöter (har {self.remaining[index]}) för placering i samtliga utskott")
+                    f"  #{turn}: '{self.group[index]}' saknar ledamöter (har {self.remaining[index]}) för placering i samtliga utskott")
                 number = self.remaining[index]
             self.elected[index] += number
             self.remaining[index] -= number
-            print(f"#{turn}: '{self.group[index]}' {self.elected[index]}, {self.remaining[index]}")
-
-
+            print(f"  #{turn}/{sum(self.elected)}: '{self.group[index]}' {self.elected[index]}, {self.remaining[index]}")
+        if prev_elected < 15 <= sum(self.elected):
+            print("  Med 15 fasta ordinarie och 15 fasta ersättare startar utdelning om från början",  prev_elected)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
