@@ -119,7 +119,9 @@ if __name__ == '__main__':
 
     ModifiedProportional("Maximum", group, mandates, presidium, board, board_sup, [True] * 14).process()
 #    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, [False] * 14).process()
-    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, [False] + [True] * 13).process()
+    mixed = [True] * 14
+    mixed[2] = False  # Socialdemokraterna not using all
+    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, mixed).process()
 
     ModifiedProportional("Organisations",
                          ["AfS",	"S+C+ViSK+ÖKA",		"POSK+BA+Utl+FK+KR+MPSKDG", 	"FiSK",		"HoJ",	"SD"],
