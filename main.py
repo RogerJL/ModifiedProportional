@@ -112,13 +112,14 @@ class ModifiedProportional(Election):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     group = ["Utl",	"AfS",	"S",	"BA",	"C",	"FiSK",	"FK",	"HoJ",	"KR",	"MPSKDG",	"POSK",	"SD",	"ViSK",	"ÖKA"]
-    mandates = [2,	3,	70,	20 + 1,	30,	4,	8,	1,	7,	8,	47,	19,	19,	13 - 1]
+    mandates =  [2, 3,	70,	20,	30,	4,	8,	1,	7,	8,	47,	19,	19,	13]
     presidium = [0,	0,	 1,  0,	 1,	0,	0,  0,  0,  0,   1,  0,  0,  0]
     board =     [0,	0,	 5,  1,	 2,	0,	1,  0,  0,  0,   3,  1,  1,  0]
     board_sup = [0,	0,	 4,  1,	 2,	0,	0,  0,  1,  1,   2,  1,  1,  1]
 
     ModifiedProportional("Maximum", group, mandates, presidium, board, board_sup, [True] * 14).process()
-    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, [False] * 14).process()
+#    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, [False] * 14).process()
+    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, [False] + [True] * 13).process()
 
     ModifiedProportional("Organisations",
                          ["AfS",	"S+C+ViSK+ÖKA",		"POSK+BA+Utl+FK+KR+MPSKDG", 	"FiSK",		"HoJ",	"SD"],
