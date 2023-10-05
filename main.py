@@ -33,17 +33,30 @@ class ModifiedProportional(Election):
                  presidium: list[int],  # Kyrkomötets precidium
                  board: list[int],  # Kyrkostyrelsens ordinarie
                  board_sup: list[int],  # Kyrkostyrelsens ersättare (ej ordinarie i utskott)
-                 extra_allocation: list[int],  # Varje grupps önskade placeringar i detta utskott
+                 allocation: list[int],  # Varje grupps önskade placeringar i detta utskott
                  ):
         super().__init__(committee_name, group, mandates, presidium, board, board_sup)
         self.elected = [0] * len(mandates)
         self.remaining = [0] * len(mandates)
-        for index, m in enumerate(mandates):
-            total = m - self.presidium[index] - self.board[index] - self.board_sup[index]
-            self.remaining[index] = total // UTSKOTT + (1 if extra_allocation[index] and total % UTSKOTT > 0 else 0)
+        for index, a in enumerate(allocation):
+            self.remaining[index] = a
         print("Indata för", committee_name)
-        for index, e in enumerate(self.elected):
-            print(f"  '{self.group[index]}' {self.remaining[index]}")
+        valid = True
+        for index, r in enumerate(self.remaining):
+            total = self.can_be_placed_with_voting_right(index)
+            s_min = total // UTSKOTT
+            s_max = s_min + (1 if total % UTSKOTT > 0 else 0)
+            if r > s_max or r < s_min:
+                valid = False
+                print(f"  '{self.group[index]}' för kort eller lång lista, {r} skall vara inom {s_min}..{s_max}")
+                continue
+            print(f"  '{self.group[index]}' {r} ({s_min}..{s_max})")
+        if not valid:
+            raise ValueError("At least one group not within allowed range")
+
+    def can_be_placed_with_voting_right(self, index):
+        total = self.mandates[index] - self.presidium[index] - self.board[index] - self.board_sup[index]
+        return total
 
     def process(self):
         print("Undelning utskott", self.committee_name)
@@ -62,12 +75,12 @@ class ModifiedProportional(Election):
         people_total_min = 0
         people_total_max = 0
         for g, s, e, r in zip(self.group, self.board_sup, self.elected, self.remaining):
-            s_min = r
+            s_min = r + s // UTSKOTT
             s_max = min((r + s + UTSKOTT - 1) // UTSKOTT, r + s)
             s_text = str(s_min) if s_min == s_max else f"{s_min}..{s_max}"
-            print(f"'{g}:\t{e} ledamöter med rösträtt,\tmed {s_text} ({r}+{s}) ersättare")
+            print(f"'{g}:\t{e} ledamöter med rösträtt,\tmed {s_text} ({r} kvar, {s} ers. ky.styr) ersättare")
             people_total_max += e + s_max
-            people_total_min += e + r
+            people_total_min += e + s_min
         print(f"Total utskotts storlek {people_total_min}..{people_total_max}")
         print()
 
@@ -89,7 +102,7 @@ class ModifiedProportional(Election):
         for index in best_index:
             if self.remaining[index] == 0:
                 print(
-                    f"  #{turn} '{self.group[index]}' saknar i utskott placeringsbara ledamöter, har {self.board_sup[index]} fria ersättare")
+                    f"  #{turn} '{self.group[index]}' saknar fler i utskott placeringsbara ledamöter, har {self.board_sup[index]} ersättare från kyrkostyrelsen att fördela")
                 done = True
         return done
 
@@ -105,31 +118,37 @@ class ModifiedProportional(Election):
                 number = self.remaining[index]
             self.elected[index] += number
             self.remaining[index] -= number
-            print(f"  #{turn}/{sum(self.elected)}: '{self.group[index]}' {self.elected[index]}, {self.remaining[index]}")
+            print(f"  #{turn}/{sum(self.elected)}: '{self.group[index]}' valda {self.elected[index]}, kvar {self.remaining[index]}")
         if prev_elected < 15 <= sum(self.elected):
             print("  Med 15 fasta ordinarie och 15 fasta ersättare startar utdelning om från början",  prev_elected)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     group = ["Utl",	"AfS",	"S",	"BA",	"C",	"FiSK",	"FK",	"HoJ",	"KR",	"MPSKDG",	"POSK",	"SD",	"ViSK",	"ÖKA"]
+    # Valresultat
     mandates =  [2, 3,	70,	20,	30,	4,	8,	1,	7,	8,	47,	19,	19,	13]
+    # Resultat av indirekta val
     presidium = [0,	0,	 1,  0,	 1,	0,	0,  0,  0,  0,   1,  0,  0,  0]
     board =     [0,	0,	 5,  1,	 2,	0,	1,  0,  0,  0,   3,  1,  1,  0]
     board_sup = [0,	0,	 4,  1,	 2,	0,	0,  0,  1,  1,   2,  1,  1,  1]
+    # Av respektive nomineringsgrupp valt antal ledamöter för detta utskott
+    alloc_max = [1, 1,   8,  3,  4, 1,  1,  1,  1,  1,   6,  3,  3,  2]
+    ModifiedProportional("Maximum", group, mandates, presidium, board, board_sup, alloc_max).process()
+#    alloc_min = [0, 0, 7, 2, 3, 0, 0, 0, 0, 0, 5, 2, 2, 1]
+#    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, alloc_min).process()
+    alloc_mixed = alloc_max.copy()
+    alloc_mixed[2] = 7  # Socialdemokraterna valde att ej använda alla
+    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, alloc_mixed).process()
 
-    ModifiedProportional("Maximum", group, mandates, presidium, board, board_sup, [True] * 14).process()
-#    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, [False] * 14).process()
-    mixed = [True] * 14
-    mixed[2] = False  # Socialdemokraterna not using all
-    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, mixed).process()
-
+    alloc_coop = [1,  15, 11, 0,  2]
     ModifiedProportional("Organisations",
-                         ["AfS",	"S+C+ViSK+ÖKA",		"POSK+BA+Utl+FK+KR+MPSKDG", 	"FiSK",		"HoJ",	"SD"],
-                         [3, 132, 92, 4, 1, 19],
-                         [0,   2,  1, 0, 0,  0],
-                         [0,   8,  5, 0, 0,  1],
-                         [0,   9,  6, 1, 1,  2],
-                         [True] * 6)\
+                         ["AfS",	"S+C+ViSK+ÖKA",		"POSK+BA+Utl+FK+KR+MPSKDG+FiSK",		"HoJ",	"SD"],
+                         # manual calculations for now...
+                         [3, 132, 96, 1, 19],
+                         [0,   2,  1, 0,  0],
+                         [0,   8,  5, 0,  1],
+                         [0,   9,  7, 1,  2],
+                         alloc_coop)\
         .process()
 
 
