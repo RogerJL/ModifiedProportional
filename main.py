@@ -50,7 +50,7 @@ class ModifiedProportional(Election):
                 valid = False
                 print(f"  '{self.group[index]}' för kort eller lång lista, {r} skall vara inom {s_min}..{s_max}")
                 continue
-            print(f"  '{self.group[index]}' {r} ({s_min}..{s_max})")
+            print(f"  '{self.group[index]}' {r} ({s_min}..{s_max}) goal {100*self.mandates[index]/(sum(self.mandates)-2):.2f}%")
         if not valid:
             raise ValueError("At least one group not within allowed range")
 
@@ -78,7 +78,7 @@ class ModifiedProportional(Election):
             s_min = r + s // UTSKOTT
             s_max = min((r + s + UTSKOTT - 1) // UTSKOTT, r + s)
             s_text = str(s_min) if s_min == s_max else f"{s_min}..{s_max}"
-            print(f"'{g}:\t{e} ledamöter med rösträtt,\tmed {s_text} ({r} kvar, {s} ers. ky.styr) ersättare")
+            print(f"'{g}:\t{e} ledamöter med rösträtt ({100*e/(sum(self.elected)):.2f}%),\tmed {s_text} ({r} kvar, {s} ers. ky.styr) ersättare")
             people_total_max += e + s_max
             people_total_min += e + s_min
         print(f"Total utskotts storlek {people_total_min}..{people_total_max}")
@@ -121,6 +121,8 @@ class ModifiedProportional(Election):
             print(f"  #{turn}/{sum(self.elected)}: '{self.group[index]}' valda {self.elected[index]}, kvar {self.remaining[index]}")
         if prev_elected < 15 <= sum(self.elected):
             print("  Med 15 fasta ordinarie och 15 fasta ersättare startar utdelning om från början",  prev_elected)
+            for index, e in enumerate(self.elected):
+                print(f"    '{self.group[index]}': {100*e/(sum(self.elected)):.2f}%")
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
