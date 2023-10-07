@@ -2,6 +2,7 @@
 
 # Press Skift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import fractions
 import logging
 import typing
 
@@ -28,16 +29,8 @@ def execute():
     alloc_mixed[2] = 7  # Socialdemokraterna valde att ej använda alla
     ModifiedProportional(election2021).group_requests("Mixad", alloc_mixed).process()
 
-    election2021coop = Election(
-        ["AfS", "S+C+ViSK+ÖKA", "POSK+BA+Utl+FK+KR+MPSKDG+FiSK", "HoJ", "SD"],
-        # manual calculations for now...
-        [3, 132, 96, 1, 19],
-        [0, 2, 1, 0, 0],
-        [0, 8, 5, 0, 1],
-        [0, 9, 7, 1, 2])
-    print("Manual coop", election2021coop)
-    election2021coopB = election2021.coop(["AfS", "S+C+ViSK+ÖKA", "POSK+BA+Utl+FK+KR+MPSKDG+FiSK", "HoJ", "SD"])
-    print("Support coop", election2021coopB)
+    election2021coop = election2021.coop(["AfS", "S+C+ViSK+ÖKA", "POSK+BA+Utl+FK+KR+MPSKDG+FiSK", "HoJ", "SD"])
+    print("Valsamverkan", election2021coop)
     alloc_coop = [1, 15, 11, 0, 2]
     ModifiedProportional(election2021coop).group_requests("Exempel med valsamverkan", alloc_coop).process()
 
@@ -64,6 +57,7 @@ class Election:
             + "\npresidium=" + str(self.presidium) \
             + "\nboard=" + str(self.board) \
             + "\nboard_sup=" + str(self.board_sup) + "}"
+
     def coop(self,
              among:list[str]):
         errors = 0
@@ -71,6 +65,7 @@ class Election:
         presidium = []
         board = []
         board_sup = []
+        used = [0] * len(self.mandates)
         for groups in among:
             mandates_ = 0
             presidium_ = 0
@@ -79,10 +74,11 @@ class Election:
             for group in groups.split("+"):
                 try:
                     index = self.group.index(group)
+                    used[index] += 1
                     mandates_ +=  self.mandates[index]
                     presidium_ += self.presidium[index]
                     board_ += self.board[index]
-                    print(group, index, self.board_sup[index])
+                    logging.debug("%s: #%d board_sup=%d", group, index, self.board_sup[index])
                     board_sup_ += self.board_sup[index]
                 except ValueError as e:
                     errors += 1
@@ -91,6 +87,13 @@ class Election:
             presidium.append(presidium_)
             board.append(board_)
             board_sup.append(board_sup_)
+        for name, count in zip(self.group, used):
+            if count == 0:
+                errors += 1
+                logging.error("Group (%s) is never used", name)
+            if count > 1:
+                errors += 1
+                logging.error("Group (%s) is used more than once (%d)", name, count)
         if errors:
             exit(1)
         return Election(among, mandates, presidium, board, board_sup)
@@ -166,7 +169,7 @@ class ModifiedProportional:
         best = 0.0
         best_index = None
         for index, m in enumerate(self.prev_elected.mandates):
-            current = m / (self.election[index] + 1)
+            current = fractions.Fraction(m, (self.election[index] + 1))
             if current > best:
                 best = current
                 best_index = [index]
@@ -196,9 +199,10 @@ class ModifiedProportional:
                 print(
                     f"  #{turn}: '{group_}' saknar ledamöter (har {self.remaining[index]}) för placering i samtliga utskott")
                 number = self.remaining[index]
+            comp = fractions.Fraction(self.prev_elected.mandates[index], self.election[index] + 1)
             self.election[index] += number
             self.remaining[index] -= number
-            print(f"  #{turn}/{sum(self.election)}: '{group_}' valda {self.election[index]}, kvar {self.remaining[index]}")
+            print(f"  #{turn}/{sum(self.election)}: '{group_}' {comp=} valda {self.election[index]}, kvar {self.remaining[index]}")
         if prev_election < 15 <= sum(self.election):
             print("  Med 15 fasta ordinarie och 15 fasta ersättare startar utdelning om från början",  prev_election)
             for index, e in enumerate(self.election):
@@ -206,6 +210,7 @@ class ModifiedProportional:
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     execute()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
