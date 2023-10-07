@@ -7,6 +7,35 @@ import typing
 UTSKOTT = 8
 
 
+def execute():
+    group = ["Utl", "AfS", "S", "BA", "C", "FiSK", "FK", "HoJ", "KR", "MPSKDG", "POSK", "SD", "ViSK", "ÖKA"]
+    # Valresultat
+    mandates = [2, 3, 70, 20, 30, 4, 8, 1, 7, 8, 47, 19, 19, 13]
+    # Resultat av indirekta val
+    presidium = [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0]
+    board = [0, 0, 5, 1, 2, 0, 1, 0, 0, 0, 3, 1, 1, 0]
+    board_sup = [0, 0, 4, 1, 2, 0, 0, 0, 1, 1, 2, 1, 1, 1]
+    # Av respektive nomineringsgrupp valt antal ledamöter för detta utskott
+    alloc_max = [1, 1, 8, 3, 4, 1, 1, 1, 1, 1, 6, 3, 3, 2]
+    ModifiedProportional("Maximum", group, mandates, presidium, board, board_sup, alloc_max).process()
+    #    alloc_min = [0, 0, 7, 2, 3, 0, 0, 0, 0, 0, 5, 2, 2, 1]
+    #    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, alloc_min).process()
+    alloc_mixed = alloc_max.copy()
+    alloc_mixed[2] = 7  # Socialdemokraterna valde att ej använda alla
+    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, alloc_mixed).process()
+    alloc_coop = [1, 15, 11, 0, 2]
+    ModifiedProportional("Organisations",
+                         ["AfS", "S+C+ViSK+ÖKA", "POSK+BA+Utl+FK+KR+MPSKDG+FiSK", "HoJ", "SD"],
+                         # manual calculations for now...
+                         [3, 132, 96, 1, 19],
+                         [0, 2, 1, 0, 0],
+                         [0, 8, 5, 0, 1],
+                         [0, 9, 7, 1, 2],
+                         alloc_coop) \
+        .process()
+
+
+
 class Election:
 
     def __init__(self,
@@ -124,34 +153,9 @@ class ModifiedProportional(Election):
             for index, e in enumerate(self.elected):
                 print(f"    '{self.group[index]}': {100*e/(sum(self.elected)):.2f}%")
 
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    group = ["Utl",	"AfS",	"S",	"BA",	"C",	"FiSK",	"FK",	"HoJ",	"KR",	"MPSKDG",	"POSK",	"SD",	"ViSK",	"ÖKA"]
-    # Valresultat
-    mandates =  [2, 3,	70,	20,	30,	4,	8,	1,	7,	8,	47,	19,	19,	13]
-    # Resultat av indirekta val
-    presidium = [0,	0,	 1,  0,	 1,	0,	0,  0,  0,  0,   1,  0,  0,  0]
-    board =     [0,	0,	 5,  1,	 2,	0,	1,  0,  0,  0,   3,  1,  1,  0]
-    board_sup = [0,	0,	 4,  1,	 2,	0,	0,  0,  1,  1,   2,  1,  1,  1]
-    # Av respektive nomineringsgrupp valt antal ledamöter för detta utskott
-    alloc_max = [1, 1,   8,  3,  4, 1,  1,  1,  1,  1,   6,  3,  3,  2]
-    ModifiedProportional("Maximum", group, mandates, presidium, board, board_sup, alloc_max).process()
-#    alloc_min = [0, 0, 7, 2, 3, 0, 0, 0, 0, 0, 5, 2, 2, 1]
-#    ModifiedProportional("Minimum", group, mandates, presidium, board, board_sup, alloc_min).process()
-    alloc_mixed = alloc_max.copy()
-    alloc_mixed[2] = 7  # Socialdemokraterna valde att ej använda alla
-    ModifiedProportional("Mixed", group, mandates, presidium, board, board_sup, alloc_mixed).process()
-
-    alloc_coop = [1,  15, 11, 0,  2]
-    ModifiedProportional("Organisations",
-                         ["AfS",	"S+C+ViSK+ÖKA",		"POSK+BA+Utl+FK+KR+MPSKDG+FiSK",		"HoJ",	"SD"],
-                         # manual calculations for now...
-                         [3, 132, 96, 1, 19],
-                         [0,   2,  1, 0,  0],
-                         [0,   8,  5, 0,  1],
-                         [0,   9,  7, 1,  2],
-                         alloc_coop)\
-        .process()
-
+    execute()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
