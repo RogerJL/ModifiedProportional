@@ -2,6 +2,7 @@
 
 # Press Skift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import logging
 import typing
 
 UTSKOTT = 8
@@ -34,6 +35,9 @@ def execute():
         [0, 2, 1, 0, 0],
         [0, 8, 5, 0, 1],
         [0, 9, 7, 1, 2])
+    print("Manual coop", election2021coop)
+    election2021coopB = election2021.coop(["AfS", "S+C+ViSK+ÖKA", "POSK+BA+Utl+FK+KR+MPSKDG+FiSK", "HoJ", "SD"])
+    print("Support coop", election2021coopB)
     alloc_coop = [1, 15, 11, 0, 2]
     ModifiedProportional(election2021coop).group_requests("Exempel med valsamverkan", alloc_coop).process()
 
@@ -53,6 +57,43 @@ class Election:
         self.presidium = presidium
         self.board = board
         self.board_sup = board_sup
+
+    def __str__(self):
+        return "{" + str(self.group) \
+            + "\nmandates=" + str(self.mandates) \
+            + "\npresidium=" + str(self.presidium) \
+            + "\nboard=" + str(self.board) \
+            + "\nboard_sup=" + str(self.board_sup) + "}"
+    def coop(self,
+             among:list[str]):
+        errors = 0
+        mandates = []
+        presidium = []
+        board = []
+        board_sup = []
+        for groups in among:
+            mandates_ = 0
+            presidium_ = 0
+            board_ = 0
+            board_sup_ = 0
+            for group in groups.split("+"):
+                try:
+                    index = self.group.index(group)
+                    mandates_ +=  self.mandates[index]
+                    presidium_ += self.presidium[index]
+                    board_ += self.board[index]
+                    print(group, index, self.board_sup[index])
+                    board_sup_ += self.board_sup[index]
+                except ValueError as e:
+                    errors += 1
+                    logging.error("Group name (%s) could not be found", group)
+            mandates.append(mandates_)
+            presidium.append(presidium_)
+            board.append(board_)
+            board_sup.append(board_sup_)
+        if errors:
+            exit(1)
+        return Election(among, mandates, presidium, board, board_sup)
 
 class ModifiedProportional:
 
@@ -74,18 +115,19 @@ class ModifiedProportional:
 
         print("Indata för", committee_name)
         elect = self.prev_elected
-        valid = True
+        errors = 0
         for index, r in enumerate(self.remaining):
             total = self.can_be_placed_with_voting_right(index)
             s_min = total // UTSKOTT
             s_max = s_min + (1 if total % UTSKOTT > 0 else 0)
             if r > s_max or r < s_min:
-                valid = False
-                print(f"  '{elect.group[index]}' för kort eller lång lista, {r} skall vara inom {s_min}..{s_max}")
+                errors += 1
+                logging.error("'%s' har för kort eller lång namn lista (%d), antalet skall vara inom %d..%d",
+                              elect.group[index], r, s_min, s_max)
                 continue
             print(f"  '{elect.group[index]}' {r} ({s_min}..{s_max}) goal {100*elect.mandates[index]/(sum(elect.mandates)-2):.2f}%")
-        if not valid:
-            raise ValueError("At least one group not within allowed range")
+        if errors:
+            exit(1)
         return self
 
     def can_be_placed_with_voting_right(self, index):
