@@ -29,9 +29,9 @@ def execute():
     alloc_mixed[2] = 7  # Socialdemokraterna valde att ej använda alla
     ModifiedProportional(election2021).group_requests("Mixad", alloc_mixed).process()
 
-    election2021coop = election2021.coop(["AfS", "S+C+ViSK+ÖKA", "POSK+BA+Utl+FK+KR+MPSKDG+FiSK", "HoJ", "SD"])
+    election2021coop = election2021.coop(["AfS", "S+ViSK+ÖKA+HoJ", "POSK+Utl+C+BA+FK+KR+MPSKDG+FiSK", "SD"])
     print("Valsamverkan", election2021coop)
-    alloc_coop = [1, 15, 11, 0, 2]
+    alloc_coop = [1, 12, 14, 2]
     ModifiedProportional(election2021coop).group_requests("Exempel med valsamverkan", alloc_coop).process()
 
 
